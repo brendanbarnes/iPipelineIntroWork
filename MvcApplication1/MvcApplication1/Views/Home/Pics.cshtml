@@ -1,0 +1,108 @@
+﻿@{
+    ViewBag.Title = "Pics";
+    var db = Database.Open("DefaultConnection");
+    var userId = "SELECT * FROM UserProfile WHERE UserName = '" + User.Identity.Name + "'";
+    var qt = db.Query(userId);
+    var userIdNum = qt.ToArray()[0].UserId;
+
+    var selectQueryString = "SELECT * FROM PicsDBs WHERE user_id = '" + userIdNum + "' ORDER BY Id desc OFFSET (0) ROWS FETCH NEXT 10 ROWS ONLY";
+}
+
+<hgroup class="title">
+    <h1>@ViewBag.Title.</h1>
+    <h2>@ViewBag.Message</h2>
+</hgroup>
+
+<script type="text/javascript">
+    function deletePic(buttonself) {
+        var button = buttonself.value;
+        var cell = document.getElementById(button + " ic");
+        $.ajax({
+            url: "/Home/DeleteImageWithId",
+            type: "POST",
+            data: JSON.stringify({ 'id': button }),
+            dataType: "json",
+            traditional: true,
+            contentType: "application/json; charset=utf-8",
+            success: function () {
+                cell.remove();
+                alert("Image succesfully deleted.");
+            },
+             error: function (error) {
+                alert(JSON.stringify(error));
+             }
+        });
+    };
+
+    function next() {
+        var div = document.getElementById("imageCollection2");
+        var numChildren = div.childElementCount;
+        $.ajax({
+            url: "/Home/LoadNextImagesForUser",
+            type: "POST",
+            data: JSON.stringify({ 'o': numChildren }),
+            dataType: "json",
+            traditional: true,
+            contentType: "application/json; charset=utf-8",
+            success: function (stuff) {
+                console.log(stuff);
+                if (stuff != null) {
+                    if (stuff.length < 10) {
+                        var button = document.getElementById("loadMore");
+                        button.disabled = "disabled";
+                    }
+                    for (var i = 0; i < stuff.length; i += 2) {
+                        var divcont = document.createElement("div");
+                        var pic = document.createElement("img");
+                        var linky = document.createElement("a");
+                        var br = document.createElement("br");
+                        var deletebutton = document.createElement("button");
+                        divcont.className = "imagecontainer";
+                        divcont.id = stuff[i+1] + " ic";
+                        pic.className = "picture"
+                        pic.src = "data:image/jpeg;base64, " + stuff[i];
+                        pic.id = stuff[i + 1];
+                        linky.href = "data:image/jpeg;base64, " + stuff[i];
+                        deletebutton.value = stuff[i + 1];
+                        deletebutton.className = "deletebutton";
+                        deletebutton.textContent = "Delete";
+                        deletebutton.onclick = function () { deletePic(this); };
+                        linky.appendChild(pic);
+                        divcont.appendChild(linky);
+                        divcont.appendChild(br);
+                        divcont.appendChild(deletebutton);
+                        div.appendChild(divcont);
+                    }
+                } else {
+                    var button = document.getElementById("loadMore");
+                    button.disabled = "disabled";
+                }
+            },
+            error: function (error) {
+                alert(JSON.stringify(error));
+            }
+
+        });
+    };
+</script>
+
+<div class="imagecollection" id="imageCollection2">
+    @foreach (var row in db.Query(selectQueryString))
+    {
+        if (row.pic != null)
+        {
+            <div class="imagecontainer" id="@row.Id ic">
+                <a href="data:image/jpeg;base64, @Convert.ToBase64String(row.pic)">
+                    <img class="picture" src="data:image/jpeg;base64, @Convert.ToBase64String(row.pic)" id="@row.Id" />
+                </a>
+                <br />
+                <button class="deletebutton" value="@row.Id" onclick="deletePic(this);">Delete</button>
+            </div>
+       
+        }
+    }
+</div>
+
+
+<button class="loadMore" onclick="next();" id="loadMore">Load More</button>
+

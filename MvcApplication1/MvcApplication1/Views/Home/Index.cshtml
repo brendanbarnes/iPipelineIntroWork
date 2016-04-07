@@ -1,0 +1,85 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+    var db = Database.Open("DefaultConnection");
+    var selectQueryString = "SELECT * FROM PicsDBs ORDER BY Id desc  OFFSET (0) ROWS FETCH NEXT 10 ROWS ONLY";
+    
+}
+
+@functions{
+
+
+}
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>@ViewBag.Title.</h1>
+                <h2>@ViewBag.Message</h2>
+            </hgroup>
+            <p>
+                This photo album is pretty neat.  You can explore any of the users content here on the homepage. 
+                They also have a way to upload their own photos via the upload page. Currently, you can only upload 
+                local photos, but urls that link directly to photos is being worked on. 
+                Minimal information needed, just a username and password for account, your photos are tied to a unique Id 
+                associated with your username.  No email, no facebook, just photos. 
+            </p>
+        </div>
+    </section>
+}
+
+<script type="text/javascript">
+    function next() {
+        var div = document.getElementById("imageCollection");
+
+        var numChildren = div.childElementCount;
+        $.ajax({
+            url: "/Home/LoadNextImages",
+            type: "POST",
+            data: JSON.stringify({ 'o': numChildren }),
+            dataType: "json",
+            traditional: true,
+            contentType: "application/json; charset=utf-8",
+            success: function (stuff) {
+                console.log(stuff);
+                if (stuff.length < 10) {
+                    var button = document.getElementById("loadMore");
+                    button.disabled = "disabled";
+                }
+                for (var i = 0; i < stuff.length; i+=2) {
+                    var divcont = document.createElement("div");
+                    var pic = document.createElement("img");
+                    var linky = document.createElement("a");
+                    divcont.className = "imagecontainer";
+                    pic.className = "picture"
+                    pic.src = "data:image/jpeg;base64, " + stuff[i];
+                    pic.id = stuff[i+1];
+                    linky.href = "data:image/jpeg;base64, " + stuff[i];
+                    linky.appendChild(pic);
+                    divcont.appendChild(linky);
+                    div.appendChild(divcont);
+                }
+            },
+            error: function (error) {
+                alert(JSON.stringify(error));
+            }
+
+        });
+    };
+</script>
+
+<div class="imagecollection" id="imageCollection">
+    @foreach (var row in db.Query(selectQueryString))
+    {
+        if (row.pic != null)
+        {
+            <div class="imagecontainer">
+                <a href="data:image/jpeg;base64, @Convert.ToBase64String(row.pic)">
+                    <img class="picture" src="data:image/jpeg;base64, @Convert.ToBase64String(row.pic)" id="@row.Id" />
+                </a>
+            </div>
+        }
+    }
+</div>
+<button class="loadMore" onclick="next();" id="loadMore">Load More</button>
+
+

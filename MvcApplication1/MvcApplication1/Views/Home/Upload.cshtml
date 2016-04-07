@@ -1,0 +1,54 @@
+﻿@{
+    ViewBag.Title = "Upload";
+    
+}
+
+<hgroup class="title">
+    <h1>@ViewBag.Title.</h1>
+    <h2>@ViewBag.Message</h2>
+</hgroup>
+
+<script type="text/javascript">
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                $('#imageview')
+                    .attr('src', e.target.result)
+            };
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    function clearImage() {
+        $('#imageview')
+            .attr('src', 0)
+    };
+
+    function setPreview() {
+        var url = document.getElementById("file2");
+        var imgview = document.getElementById("imageview2");
+        imgview.src = url;
+    };
+</script>
+
+
+
+    <article>
+        <p>
+            @using (Html.BeginForm("Upload", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                <label for="file">Upload Image:</label>
+                <input type="file" name="file" id="file" accept="image/gif, image/png, image/jpeg" onchange="readURL(this);" oncancel="clearImage();" />
+                <input type="submit" value="Upload Image" oncancel="clearImage()" />
+                <div id="imagediv">
+                    <h3 id="imagePreviewHeader">Image Preview</h3>
+                    <img id="imageview" />
+                </div>
+            }
+        </p>
+
+    </article>
+   
